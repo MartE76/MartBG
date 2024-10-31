@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diamo un prezzo alla duplice attitudine</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .blue-bg {
+            background-color: #e0f7fa;
+        }
+        .light-red-bg {
+            background-color: #ffcccb;
+        }
+        .chart {
+            width: 50px;
+            height: 50px;
+            display: inline-block;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto;
+        }
+        .average-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .bar-chart {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            height: 20vh; /* Limite di altezza */
+        }
+        .bar {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            width: 30px;
+            position: relative;
+        }
+        .bar-latte {
+            background-color: blue;
+            transition: height 0.3s;
+        }
+        .bar-bestiame {
+            background-color: red;
+            transition: height 0.3s;
+            position: absolute;
+            bottom: 0;
+        }
+        .label {
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Diamo un prezzo alla duplice attitudine</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Mese</th>
+            <th>Fatturato latte del mese €</th>
+            <th>Quantità di latte consegnato (litri)</th>
+            <th>Fatturato vitelli da ristallo €</th>
+            <th>Fatturato manze da vita €</th>
+            <th>Fatturato capi da macello €</th>
+            <th class="blue-bg">Prezzo medio mensile del latte consegnato</th>
+            <th class="light-red-bg">Valore medio mensile delle vendite di animali in € per litro di latte consegnato</th>
+            <th>Valore medio della vendita di latte e bestiame (€ per litro di latte)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <script>
+            const months = [
+                "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio",
+                "Giugno", "Luglio", "Agosto", "Settembre", 
+                "Ottobre", "Novembre", "Dicembre"
+            ];
+
+            const tbody = document.querySelector('tbody');
+            months.forEach(month => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${month}</td>
+                    <td><input type="number" /></td>
+                    <td><input type="number" /></td>
+                    <td><input type="number" /></td>
+                    <td><input type="number" /></td>
+                    <td><input type="number" /></td>
+                    <td class="blue-bg"></td>
+                    <td class="light-red-bg"></td>
+                    <td></td>
+                    <td class="chart"></td>
+                `;
+                tbody.appendChild(row);
+            });
+        </script>
+        <tr class="average-row">
+            <td>Media Annuale</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="blue-bg"></td>
+            <td class="light-red-bg"></td>
+            <td></td>
+            <td class="chart"></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="bar-chart" id="barChart"></div>
+
+<script>
+    const inputs = document.querySelectorAll('input[type="number"]');
+
+    inputs.forEach(input => {
+        input.addEventListener('input', updateCalculations);
+    });
+
+    function updateCalculations() {
+        const row = this.closest('tr');
+        const fatturatoLatte = parseFloat(row.cells[1].querySelector('input').value) || 0;
+        const quantitaLatte = parseFloat(row.cells[2].querySelector('input').value) || 0;
+        const fatturatoVitelli = parseFloat(row.cells[3].querySelector('input').value) || 0;
+        const fatturatoManze = parseFloat(row.cells[4].querySelector('input').value) || 0;
+        const fatturatoCapi = parseFloat(row.cells[5].querySelector('input').value) || 0;
+
+        // Calcolo del prezzo medio mensile del latte
+        const prezzoMedio = quantitaLatte > 0 ? (fatturatoLatte / quantitaLatte) : 0;
+        row.cells[6].textContent = prezzoMedio.toFixed(2);
+
+        // Calcolo del valore medio delle vendite di animali
+        const valoreAnimali = quantitaLatte > 0 ? (fatturatoVitelli + fatturatoManze + fatturatoCapi) / quantitaLatte : 0;
+        row.cells[7].textContent = valoreAnimali.toFixed(2);
+
+        // Calcolo del valore medio della vendita di latte e bestiame
+        const valoreTotale = fatturatoLatte + fatturatoVitelli + fatturatoManze + fatturatoCapi;
+        const valoreMedio = quantitaLatte > 0 ? (valoreTotale / quantitaLatte) : 0;
+        row.cells[8].textContent = valoreMedio.toFixed(2);
+
+        // Aggiorna il grafico a torta
+        const chart = row.querySelector('.chart');
+        const totalSales = fatturatoLatte + fatturatoVitelli + fatturatoManze + fatturatoCapi;
+        const lattePercentage = totalSales > 0 ? (fatturatoLatte / totalSales) * 100 : 0;
+        const bestiamePercentage = totalSales > 0 ? ((fatturatoVitelli + fatturatoManze + fatturatoCapi) / totalSales) * 100 : 0;
+        
+        chart.style.background = `conic-gradient(blue 0%, blue ${lattePercentage}%, red ${lattePercentage}%, red 100%)`;
+
+        updateAnnualAverage();
+        updateBarChart();
+    }
+
+    function updateBarChart() {
+        const barChart = document.getElementById('barChart');
+        barChart.innerHTML = ''; // Pulisce il grafico a colonne
+
+        const rows = document.querySelectorAll('tbody tr:not(.average-row)');
+        rows.forEach(row => {
+            const fatturatoLatte = parseFloat(row.cells[1].querySelector('input').value) || 0;
+            const fatturatoVitelli = parseFloat(row.cells[3].querySelector('input').value) || 0;
+            const fatturatoManze = parseFloat(row.cells[4].querySelector('input').value) || 0;
+            const fatturatoCapi = parseFloat(row.cells[5].querySelector('input').value) || 0;
+
+            const totalSales = fatturatoLatte + fatturatoVitelli + fatturatoManze + fatturatoCapi;
+            const maxBarHeight = window.innerHeight / 5; // Limite dell'altezza
+
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.height = `${Math.min(totalSales / 10, maxBarHeight)}px`; // Regola l'altezza per il grafico
+
+            const latteHeight = Math.min(fatturatoLatte / 10, maxBarHeight);
+            const bestiameHeight = Math.min((fatturatoVitelli + fatturatoManze + fatturatoCapi) / 10, maxBarHeight);
+
+            const latteBar = document.createElement('div');
+            latteBar.className = 'bar-latte';
+            latteBar.style.height = `${latteHeight}px`;
+
+            const bestiameBar = document.createElement('div');
+            bestiameBar.className = 'bar-bestiame';
+            bestiameBar.style.height = `${bestiameHeight}px`;
+            bestiameBar.style.marginTop = `-${bestiameHeight}px`; // Posiziona il bar del bestiame sopra
+
+            bar.appendChild(latteBar);
+            bar.appendChild(bestiameBar);
+
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = row.cells[0].textContent; // Nome del mese
+
+            barChart.appendChild(bar);
+            barChart.appendChild(label);
+        });
+    }
+
+    function updateAnnualAverage() {
+        const averageRow = document.querySelector('.average-row');
+        const cells = averageRow.querySelectorAll('td');
+        
+        let totalFatturatoLatte = 0;
+        let totalQuantitaLatte = 0;
+        let totalFatturatoVitelli = 0;
+        let totalFatturatoManze = 0;
+        let totalFatturatoCapi = 0;
+        let totalPrezzoMedio = 0;
+        let totalValoreAnimali = 0;
+        let totalQuantita = 0;
+
+        const rows = document.querySelectorAll('tbody tr:not(.average-row)');
+        rows.forEach(row => {
+            const fatturatoLatte = parseFloat(row.cells[1].querySelector('input').value) || 0;
+            const quantitaLatte = parseFloat(row.cells[2].querySelector('input').value) || 0;
+            const fatturatoVitelli = parseFloat(row.cells[3].querySelector('input').value) || 0;
+            const fatturatoManze = parseFloat(row.cells[4].querySelector('input').value) || 0;
+            const fatturatoCapi = parseFloat(row.cells[5].querySelector('input').value) || 0;
+
+            totalFatturatoLatte += fatturatoLatte;
+            totalQuantitaLatte += quantitaLatte;
+            totalFatturatoVitelli += fatturatoVitelli;
+            totalFatturatoManze += fatturatoManze;
+            totalFatturatoCapi += fatturatoCapi;
+
+            if (quantitaLatte > 0) {
+                totalPrezzoMedio += (fatturatoLatte / quantitaLatte) * quantitaLatte;
+                totalQuantita += quantitaLatte;
+            }
+        });
+
+        const valoreTotaleAnnual = totalFatturatoLatte + totalFatturatoVitelli + totalFatturatoManze + totalFatturatoCapi;
+        cells[1].textContent = (totalFatturatoLatte / totalQuantita).toFixed(2);
+        cells[2].textContent = (totalQuantitaLatte / rows.length).toFixed(2);
+        cells[3].textContent = (totalFatturatoVitelli / totalQuantita).toFixed(2);
+        cells[4].textContent = (totalFatturatoManze / totalQuantita).toFixed(2);
+        cells[5].textContent = (totalFatturatoCapi / totalQuantita).toFixed(2);
+        cells[6].textContent = (totalQuantita > 0 ? (totalPrezzoMedio / totalQuantita) : 0).toFixed(2);
+        cells[7].textContent = (totalQuantita > 0 ? ((totalFatturatoVitelli + totalFatturatoManze + totalFatturatoCapi) / totalQuantita) : 0).toFixed(2);
+        cells[8].textContent = (totalQuantita > 0 ? (valoreTotaleAnnual / totalQuantita) : 0).toFixed(2);
+        
+        // Grafico per la media annuale
+        const averageChart = averageRow.querySelector('.chart');
+        const annualTotalSales = totalFatturatoLatte + totalFatturatoVitelli + totalFatturatoManze + totalFatturatoCapi;
+        const annualLattePercentage = annualTotalSales > 0 ? (totalFatturatoLatte / annualTotalSales) * 100 : 0;
+        const annualBestiamPercentage = annualTotalSales > 0 ? ((totalFatturatoVitelli + totalFatturatoManze + totalFatturatoCapi) / annualTotalSales) * 100 : 0;
+        
+        averageChart.style.background = `conic-gradient(blue 0%, blue ${annualLattePercentage}%, red ${annualLattePercentage}%, red 100%)`;
+    }
+</script>
+
+</body>
+</html>
